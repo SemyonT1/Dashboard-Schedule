@@ -1,0 +1,90 @@
+package handlers
+
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+	"Dashboard_Schedule/internal/db"
+)
+
+// GetOverallLoadHandler handles /overall-load
+func GetOverallLoadHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	load, err := db.GetOverallLoad(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(load)
+}
+
+// GetGroupLoadHandler handles /group-load/{groupID}
+func GetGroupLoadHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "groupID")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid group ID", http.StatusBadRequest)
+		return
+	}
+	ctx := r.Context()
+	load, err := db.GetGroupLoad(ctx, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(load)
+}
+
+// GetTeacherLoadHandler handles /teacher-load/{teacherID}
+func GetTeacherLoadHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "teacherID")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid teacher ID", http.StatusBadRequest)
+		return
+	}
+	ctx := r.Context()
+	load, err := db.GetTeacherLoad(ctx, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(load)
+}
+func GetGroupScheduleHandler(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(chi.URLParam(r, "groupID"))
+	data, _ := db.GetGroupSchedule(r.Context(), id)
+	json.NewEncoder(w).Encode(data)
+}
+func GetTeacherScheduleHandler(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(chi.URLParam(r, "teacherID"))
+	data, _ := db.GetTeacherSchedule(r.Context(), id)
+	json.NewEncoder(w).Encode(data)
+}
+func GetAudienceUtilizationHandler(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(chi.URLParam(r, "audienceID"))
+	data, _ := db.GetAudienceUtilization(r.Context(), id)
+	json.NewEncoder(w).Encode(data)
+}
+func GetDailyLoadHandler(w http.ResponseWriter, r *http.Request) {
+	date := chi.URLParam(r, "date")
+	data, _ := db.GetDailyLoad(r.Context(), date)
+	json.NewEncoder(w).Encode(data)
+}
+func GetWeeklyLoadHandler(w http.ResponseWriter, r *http.Request) {
+	start := r.URL.Query().Get("start")
+	data, _ := db.GetWeeklyLoad(r.Context(), start)
+	json.NewEncoder(w).Encode(data)
+}
+func GetTeacherAvailabilityHandler(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(chi.URLParam(r, "teacherID"))
+	date := r.URL.Query().Get("date")
+	data, _ := db.GetTeacherAvailability(r.Context(), id, date)
+	json.NewEncoder(w).Encode(data)
+}
