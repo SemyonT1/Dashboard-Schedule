@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: rasp
     volumes:
       - db-data:/var/lib/postgresql/data
+      - ./dump.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
 
@@ -16,7 +17,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgres://postgres:admin123@localhost:5432/rasp?sslmode=disable
+      - DATABASE_URL=postgres://postgres:admin123@db:5432/rasp?sslmode=disable
       - PORT=8080
     depends_on:
       - db

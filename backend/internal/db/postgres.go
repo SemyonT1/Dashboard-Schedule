@@ -7,7 +7,7 @@ import (
 )
 var db *sql.DB
 func Connect() {
-	dsn := "postgres://postgres:admin123@localhost:5432/rasp?sslmode=disable"
+	dsn := "postgres://postgres:admin123@db:5432/rasp?sslmode=disable"
 	fmt.Println("Connecting to DB with DSN:", dsn)
 	var err error
 	db, err = sql.Open("postgres", dsn)

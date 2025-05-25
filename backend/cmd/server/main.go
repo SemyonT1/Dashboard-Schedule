@@ -26,7 +26,7 @@ func main() {
     port := os.Getenv("PORT")
 	
     if port == "" {
-        port = "9090"
+        port = "8080"
     }
     log.Printf("Server started at :%s", port)
     http.ListenAndServe(":"+port, r)
