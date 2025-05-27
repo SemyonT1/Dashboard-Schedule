@@ -88,3 +88,17 @@ func GetTeacherAvailabilityHandler(w http.ResponseWriter, r *http.Request) {
 	data, _ := db.GetTeacherAvailability(r.Context(), id, date)
 	json.NewEncoder(w).Encode(data)
 }
+func GetGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	data, _ := db.GetGroups(r.Context())
+	json.NewEncoder(w).Encode(data)
+}
+
+func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
+	data, _ := db.GetTeachers(r.Context())
+	json.NewEncoder(w).Encode(data)
+}
+
+func GetAudiencesHandler(w http.ResponseWriter, r *http.Request) {
+	data, _ := db.GetAudiences(r.Context())
+	json.NewEncoder(w).Encode(data)
+}

@@ -64,15 +64,16 @@ func GetGroupSchedule(ctx context.Context, groupID int) (models.Lesson, error) {
 // Расписание преподавателя
 func GetTeacherSchedule(ctx context.Context, teacherID int) ([]models.Lesson, error) {
 	query := `
-		SELECT r.weekday, r.time, d.title as subject, g.title as group, r.audience_id, p.fio as teacher
-		FROM sc_rasp7 r
-		JOIN sc_rasp7_preps rp ON r.id = rp.rasp7_id
-		JOIN sc_prep p ON p.id = rp.prep_id
-		JOIN sc_rasp7_groups rg ON r.id = rg.rasp7_id
+		SELECT d.day, d.weekday, disc.title, g.title, r.room_id, p.fio
+		FROM sc_rasp18 rasp
+		JOIN sc_rasp18_preps rp ON rp.rasp18_id = rasp.id
+		JOIN sc_rasp18_groups rg ON rg.rasp18_id = rasp.id
 		JOIN sc_group g ON g.id = rg.group_id
-		JOIN sc_disc d ON r.disc_id = d.id
+		JOIN sc_disc disc ON disc.id = rasp.disc_id
+		JOIN sc_days d ON d.id = rasp.day_id
+		JOIN sc_prep p ON p.id = rp.prep_id
 		WHERE p.id = $1
-		ORDER BY r.weekday, r.time;
+		ORDER BY d.day, d.weekday
 	`
 	rows, err := db.QueryContext(ctx, query, teacherID)
 	if err != nil {
@@ -114,11 +115,12 @@ func GetDailyLoad(ctx context.Context, date string) (models.DailyLoad, error) {
 // Общая нагрузка в неделю
 func GetWeeklyLoad(ctx context.Context, weekStart string) ([]models.DailyLoad, error) {
 	query := `
-		SELECT r.weekday, COUNT(*) AS total_pairs
-		FROM sc_rasp7 r
-		WHERE r.weekday >= $1::date AND r.weekday < $1::weekday + interval '7 days'
-		GROUP BY r.weekday
-		ORDER BY r.weekday;
+		SELECT d.day, COUNT(*)
+		FROM sc_rasp18 r
+		JOIN sc_days d ON r.day_id = d.id
+		WHERE d.day >= $1::day AND d.day < $1::day + interval '7 days'
+		GROUP BY d.day
+		ORDER BY d.day
 	`
 	rows, err := db.QueryContext(ctx, query, weekStart)
 	if err != nil {
@@ -141,13 +143,15 @@ func GetWeeklyLoad(ctx context.Context, weekStart string) ([]models.DailyLoad, e
 // Свободные окна для преподавателя в определённый день
 func GetTeacherAvailability(ctx context.Context, teacherID int, date string) ([]models.TimeSlot, error) {
 	query := `
-		SELECT time FROM timeslots
+		SELECT t.time
+		FROM sc_times t
 		EXCEPT
-		SELECT r.time
-		FROM sc_rasp7 r
-		JOIN sc_rasp7_preps rp ON r.id = rp.rasp7_id
-		WHERE rp.prep_id = $1 AND r.date = $2
-		ORDER BY time;
+		SELECT d.weekday
+		FROM sc_rasp18 r
+		JOIN sc_days d ON r.day_id = d.id
+		JOIN sc_rasp18_preps rp ON rp.rasp18_id = r.id
+		WHERE d.day = $1 AND rp.prep_id = $2
+		ORDER BY t.time;
 	`
 	rows, err := db.QueryContext(ctx, query, teacherID, date)
 	if err != nil {
@@ -165,4 +169,55 @@ func GetTeacherAvailability(ctx context.Context, teacherID int, date string) ([]
 		slots = append(slots, slot)
 	}
 	return slots, nil
+}
+func GetGroups(ctx context.Context) ([]models.Group, error) {
+	rows, err := db.QueryContext(ctx, "SELECT id, title FROM sc_group ORDER BY title")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var groups []models.Group
+	for rows.Next() {
+		var g models.Group
+		err := rows.Scan(&g.ID, &g.Title)
+		if err != nil {
+		return nil, err
+		}
+		groups = append(groups, g)
+	}
+	return groups, nil
+}
+func GetTeachers(ctx context.Context) ([]models.Teacher, error) {
+	rows, err := db.QueryContext(ctx, "SELECT id, fio FROM sc_prep ORDER BY fio")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var teachers []models.Teacher
+	for rows.Next() {
+		var t models.Teacher
+		err := rows.Scan(&t.ID, &t.FIO)
+		if err != nil {
+			return nil, err
+		}
+		teachers = append(teachers, t)
+	}
+	return teachers, nil
+}
+func GetAudiences(ctx context.Context) ([]models.Audience, error) {
+	rows, err := db.QueryContext(ctx, "SELECT id, room FROM sc_rasp18_rooms ORDER BY room")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var audiences []models.Audience
+	for rows.Next() {
+		var t models.Audience
+		err := rows.Scan(&t.ID, &t.Room)
+		if err != nil {
+			return nil, err
+		}
+		audiences = append(audiences, t)
+	}
+	return audiences, nil
 }

@@ -33,3 +33,15 @@ type TimeSlot struct {
 	StartTime string `json:"start_time"`
 	EndTime   string `json:"end_time"`
 }
+type Group struct {
+	ID int `json:"group_id"`
+	Title string `json:"group_title"`
+}
+type Teacher struct {
+	ID int `json:"teacher_id"`
+	FIO string `json:"fio"`
+}
+type Audience struct {
+	ID int `json:"audience_id"`
+	Room string `json:"room"`
+}
