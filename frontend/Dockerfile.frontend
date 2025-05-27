@@ -1,0 +1,12 @@
+FROM node:20.17.0-alpine
+
+WORKDIR /Dashboard_Schedule
+COPY package*.json ./
+
+RUN npm install -g npm@11.4.1
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+CMD ["npm", "start"]
