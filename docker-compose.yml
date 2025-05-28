@@ -18,7 +18,7 @@ services:
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.backend
     environment:
       - DATABASE_URL=postgres://postgres:admin123@db:5432/rasp?sslmode=disable
@@ -37,9 +37,9 @@ services:
       dockerfile: Dockerfile.frontend
     #image: node:18-alpine
     #working_dir: /Dashboard_Schedule
-    # volumes:
-    #   - ./frontend:/Dashboard_Schedule
-    # command: sh -c "npm install && npm start"
+    #volumes:
+      #- ./frontend:/Dashboard_Schedule
+    #command: sh -c "npm start"
     ports:
       - "3000:3000"
     depends_on:

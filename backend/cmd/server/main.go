@@ -5,7 +5,7 @@ import (
     "Dashboard_Schedule/internal/handlers"
 
     "github.com/go-chi/chi/v5"
-
+    "github.com/rs/cors"
     "log"
     "net/http"
     "os"
@@ -14,6 +14,14 @@ import (
 func main() {
     db.Connect()
     r := chi.NewRouter()
+    handler := cors.New(cors.Options {
+    AllowedOrigins:   []string{"http://localhost:3000"},
+    AllowCredentials: true,
+    AllowedHeaders:   []string{"*"},
+    AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+    }).Handler(r)
+
+   
 
     r.Get("/overall-load", handlers.GetOverallLoadHandler) // норм
 	r.Get("/group-load/{groupID}", handlers.GetGroupLoadHandler) // норм
@@ -32,5 +40,5 @@ func main() {
         port = "8080"
     }
     log.Printf("Server started at :%s", port)
-    http.ListenAndServe(":"+port, r)
+    http.ListenAndServe(":"+port, handler)
 }
