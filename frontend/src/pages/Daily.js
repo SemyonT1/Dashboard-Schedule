@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchDailySchedule } from '../api';
-import ScheduleTable from '../components/ScheduleTable';
+import ScheduleTable from '../components/filters/ScheduleTable';
 import DatePicker from '../components/filters/DatePicker';
 
 const Daily = () => {

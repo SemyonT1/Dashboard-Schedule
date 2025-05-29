@@ -50,10 +50,10 @@ func GetTeacherLoad(ctx context.Context, teacherID int) (models.TeacherLoad, err
 // Расписание для группы
 func GetGroupSchedule(ctx context.Context, groupID int) (models.Lesson, error) {
 	query := 
-	`SELECT fields FROM sc_rasp7 r
+	`SELECT r.pair FROM sc_rasp7 r
 	JOIN sc_rasp7_groups rg ON r.id = rg.rasp7_id
 	JOIN sc_group g ON g.id = rg.group_id
-	WHERE g.id = $1 ORDER BY r.weekday, r.time
+	WHERE g.id = $1 ORDER BY r.weekday, r.version
 	`
 	var load models.Lesson
 	row := db.QueryRowContext(ctx, query, groupID)
@@ -95,8 +95,8 @@ func GetTeacherSchedule(ctx context.Context, teacherID int) ([]models.Lesson, er
 
 // Нагрузка аудитории
 func GetAudienceUtilization(ctx context.Context, audienceID int) (models.AudienceUtilization, error) {
-	query := `SELECT r.audience_id, COUNT(*) FROM sc_rasp7 r WHERE r.audience_id = $1 
-			  GROUP BY r.audience_id"`
+	query := `SELECT r.rasp7_id, COUNT(*) FROM sc_rasp7_rooms r WHERE r.rasp7_id = $1 
+			  GROUP BY r.rasp7_id"`
 	var load models.AudienceUtilization
 	row := db.QueryRowContext(ctx, query, audienceID)
 	err := row.Scan(&load.AudienceID, &load.LoadCount)
@@ -143,16 +143,7 @@ func GetWeeklyLoad(ctx context.Context, weekStart string) ([]models.DailyLoad, e
 // Свободные окна для преподавателя в определённый день
 func GetTeacherAvailability(ctx context.Context, teacherID int, date string) ([]models.TimeSlot, error) {
 	query := `
-		SELECT t.time
-		FROM sc_times t
-		EXCEPT
-		SELECT d.weekday
-		FROM sc_rasp18 r
-		JOIN sc_days d ON r.day_id = d.id
-		JOIN sc_rasp18_preps rp ON rp.rasp18_id = r.id
-		WHERE d.day = $1 AND rp.prep_id = $2
-		ORDER BY t.time;
-	`
+			`
 	rows, err := db.QueryContext(ctx, query, teacherID, date)
 	if err != nil {
 		return nil, err

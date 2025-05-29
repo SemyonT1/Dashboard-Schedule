@@ -10,7 +10,6 @@ import (
 	"Dashboard_Schedule/internal/db"
 )
 
-// GetOverallLoadHandler handles /overall-load
 func GetOverallLoadHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	load, err := db.GetOverallLoad(ctx)
@@ -22,7 +21,7 @@ func GetOverallLoadHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(load)
 }
 
-// GetGroupLoadHandler handles /group-load/{groupID}
+
 func GetGroupLoadHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "groupID")
 	id, err := strconv.Atoi(idStr)
@@ -40,7 +39,7 @@ func GetGroupLoadHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(load)
 }
 
-// GetTeacherLoadHandler handles /teacher-load/{teacherID}
+
 func GetTeacherLoadHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "teacherID")
 	id, err := strconv.Atoi(idStr)

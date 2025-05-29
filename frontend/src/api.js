@@ -14,7 +14,7 @@ const handleResponse = async (response) => {
 
 // Основные функции API:
 
-// 1. Общая статистика
+// Общая статистика
 export const fetchOverallLoad = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/overall-load`);
@@ -25,7 +25,7 @@ export const fetchOverallLoad = async () => {
   }
 };
 
-// 2. Статистика по группе
+//  Статистика по группе
 export const fetchGroupLoad = async (groupId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/group-load/${groupId}`);
@@ -36,7 +36,7 @@ export const fetchGroupLoad = async (groupId) => {
   }
 };
 
-// 3. Статистика по преподавателю
+//  Статистика по преподавателю
 export const fetchTeacherLoad = async (teacherId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/teacher-load/${teacherId}`);
@@ -47,7 +47,7 @@ export const fetchTeacherLoad = async (teacherId) => {
   }
 };
 
-// 4. Недельная нагрузка
+//  Недельная нагрузка
 export const fetchWeeklyLoad = async (startDate, endDate) => {
   try {
     const params = new URLSearchParams();
@@ -62,7 +62,7 @@ export const fetchWeeklyLoad = async (startDate, endDate) => {
   }
 };
 
-// 5. Списки данных
+//  Списки данных
 export const fetchGroups = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/groups`);
@@ -94,7 +94,7 @@ export const fetchAudiences = async () => {
 };
 
 
-/**
+/*
  * Получение расписания на день
  * @param {string} date - Дата в формате YYYY-MM-DD
  */

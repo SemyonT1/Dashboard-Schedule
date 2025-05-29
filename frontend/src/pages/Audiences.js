@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAudiences } from '../api';
 import MetricCard from '../components/cards/MetricCard';
-import DataTable from '../components/DataTable';
+import DataTable from '../components/filters/DataTable';
 
 const Audiences = () => {
   const [audiences, setAudiences] = useState([]);

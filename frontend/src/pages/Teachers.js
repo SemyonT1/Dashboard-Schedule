@@ -6,18 +6,25 @@ import SelectInput from '../components/filters/SelectInput';
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]);
-  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [selectedTeacher, setSelectedTeacher] = useState('');
   const [teacherData, setTeacherData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadTeachers = async () => {
       try {
+        setLoading(true);
         const data = await fetchTeachers();
         setTeachers(data);
-        if (data.length > 0) setSelectedTeacher(data[0].id);
+        if (data.length > 0) {
+          setSelectedTeacher(String(data[0].id)); // Преобразуем ID в строку
+        }
       } catch (error) {
         console.error('Ошибка загрузки преподавателей:', error);
+        setError('Не удалось загрузить список преподавателей');
+      } finally {
+        setLoading(false);
       }
     };
     loadTeachers();
@@ -29,10 +36,11 @@ const Teachers = () => {
     const loadTeacherData = async () => {
       try {
         setLoading(true);
-        const data = await fetchTeacherLoad(selectedTeacher);
+        const data = await fetchTeacherLoad(Number(selectedTeacher)); // Преобразуем обратно в число
         setTeacherData(data);
       } catch (error) {
         console.error('Ошибка загрузки данных преподавателя:', error);
+        setError('Не удалось загрузить данные преподавателя');
       } finally {
         setLoading(false);
       }
@@ -52,6 +60,20 @@ const Teachers = () => {
     ],
   };
 
+  if (error) {
+    return (
+      <div className="p-6 text-red-500">
+        {error}
+        <button 
+          onClick={() => window.location.reload()}
+          className="ml-4 px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Попробовать снова
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Статистика по преподавателям</h1>
@@ -59,7 +81,7 @@ const Teachers = () => {
       <div className="mb-6 w-64">
         <SelectInput
           options={teachers.map(teacher => ({ 
-            value: teacher.id, 
+            value: String(teacher.id), // Значение должно быть строкой
             label: `${teacher.last_name} ${teacher.first_name[0]}.${teacher.middle_name[0]}.` 
           }))}
           value={selectedTeacher}
@@ -89,12 +111,16 @@ const Teachers = () => {
             />
           </div>
 
-          <div className="bg-white p-4 rounded-lg shadow mb-6">
-            <LineChart 
-              data={chartData} 
-              title="Нагрузка по неделям" 
-            />
-          </div>
+          {teacherData?.weekly_load?.length > 0 ? (
+            <div className="bg-white p-4 rounded-lg shadow mb-6">
+              <LineChart 
+                data={chartData} 
+                title="Нагрузка по неделям" 
+              />
+            </div>
+          ) : (
+            <p className="text-gray-500">Нет данных о нагрузке</p>
+          )}
         </>
       )}
     </div>

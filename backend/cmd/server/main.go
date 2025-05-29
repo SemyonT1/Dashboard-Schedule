@@ -15,7 +15,7 @@ func main() {
     db.Connect()
     r := chi.NewRouter()
     handler := cors.New(cors.Options {
-    AllowedOrigins:   []string{"http://localhost:3000"},
+    AllowedOrigins:   []string{"*"},
     AllowCredentials: true,
     AllowedHeaders:   []string{"*"},
     AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -23,19 +23,19 @@ func main() {
 
    
 
-    r.Get("/overall-load", handlers.GetOverallLoadHandler) // норм
-	r.Get("/group-load/{groupID}", handlers.GetGroupLoadHandler) // норм
-	r.Get("/teacher-load/{teacherID}", handlers.GetTeacherLoadHandler) //норм
-	r.Get("/group-schedule/{groupID}", handlers.GetGroupScheduleHandler) // хуета
-	r.Get("/teacher-schedule/{teacherID}", handlers.GetTeacherScheduleHandler) // хуета
-	r.Get("/audience-utilization/{audienceID}", handlers.GetAudienceUtilizationHandler) // хуета
-	r.Get("/daily-load/{date}", handlers.GetDailyLoadHandler) // хуета
-	r.Get("/weekly-load", handlers.GetWeeklyLoadHandler) // хуета
-    r.Get("/groups", handlers.GetGroupsHandler) // норм
-    r.Get("/teachers", handlers.GetTeachersHandler) // норм
-    r.Get("/audiences", handlers.GetAudiencesHandler) // норм
+    r.Get("/overall-load", handlers.GetOverallLoadHandler) // +
+	r.Get("/group-load/{groupID}", handlers.GetGroupLoadHandler) // + 
+	r.Get("/teacher-load/{teacherID}", handlers.GetTeacherLoadHandler) // +
+	r.Get("/group-schedule/{groupID}", handlers.GetGroupScheduleHandler) // -
+	r.Get("/teacher-schedule/{teacherID}", handlers.GetTeacherScheduleHandler) // +
+	r.Get("/audience-utilization/{audienceID}", handlers.GetAudienceUtilizationHandler) // -
+	r.Get("/daily-load/{date}", handlers.GetDailyLoadHandler) // -
+	r.Get("/weekly-load", handlers.GetWeeklyLoadHandler) // -
+    r.Get("/groups", handlers.GetGroupsHandler) // +
+    r.Get("/teachers", handlers.GetTeachersHandler) // +
+    r.Get("/audiences", handlers.GetAudiencesHandler) // +
+    
     port := os.Getenv("PORT")
-	
     if port == "" {
         port = "8080"
     }

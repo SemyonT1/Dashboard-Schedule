@@ -35,11 +35,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.frontend
-    #image: node:18-alpine
-    #working_dir: /Dashboard_Schedule
-    #volumes:
-      #- ./frontend:/Dashboard_Schedule
-    #command: sh -c "npm start"
     ports:
       - "3000:3000"
     depends_on:
