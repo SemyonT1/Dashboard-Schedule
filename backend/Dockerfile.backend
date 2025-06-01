@@ -3,15 +3,27 @@ FROM golang:1.24.2 AS builder
 WORKDIR /Dashboard_Schedule
 COPY go.mod go.sum ./
 RUN go mod download
+# Установка swag и зависимостей
+RUN go install github.com/swaggo/swag/cmd/swag@v1.16.2 && \
+    cp /go/bin/swag /usr/local/bin/swag
 
-COPY . . 
+# Копируем проект
+COPY . .
+
+# Генерация Swagger-документации
+WORKDIR /Dashboard_Schedule
+RUN rm -rf ./internal/docs && \
+    /usr/local/bin/swag init --generalInfo ./cmd/server/main.go --output internal/docs
+
+# Сборка сервера
+WORKDIR /Dashboard_Schedule
 RUN go build -o server ./cmd/server
 
+# Финальный образ
 FROM golang:latest
 WORKDIR /Dashboard_Schedule
-
 COPY --from=builder /Dashboard_Schedule/server .
+COPY --from=builder /Dashboard_Schedule/internal/docs ./docs
 
 EXPOSE 8080
-
-CMD [ "./server" ]
+CMD ["./server"]

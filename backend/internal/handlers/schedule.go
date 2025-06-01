@@ -10,6 +10,13 @@ import (
 	"Dashboard_Schedule/internal/db"
 )
 
+// GetOverallLoadHandler godoc
+// @Summary Получение общей загруженности
+// @Description Возвращает общее количество пар
+// @Tags Статистика
+// @Produce json
+// @Success 200 {object} models.OverallLoad
+// @Router /overall-load [get]
 func GetOverallLoadHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	load, err := db.GetOverallLoad(ctx)
@@ -21,7 +28,13 @@ func GetOverallLoadHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(load)
 }
 
-
+// GetGroupLoadHandler godoc
+// @Summary Получение загруженности групп
+// @Description Возвращает количество пар группы
+// @Tags Статистика
+// @Produce json
+// @Success 200 {object} models.GroupLoad
+// @Router /group-load/{group.id} [get]
 func GetGroupLoadHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "groupID")
 	id, err := strconv.Atoi(idStr)
@@ -87,6 +100,12 @@ func GetTeacherAvailabilityHandler(w http.ResponseWriter, r *http.Request) {
 	data, _ := db.GetTeacherAvailability(r.Context(), id, date)
 	json.NewEncoder(w).Encode(data)
 }
+// GetGroupsHandler godoc
+// @Summary Получить список групп
+// @Tags groups
+// @Produce json
+// @Success 200 {array} models.Group
+// @Router /groups [get]
 func GetGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	data, _ := db.GetGroups(r.Context())
 	json.NewEncoder(w).Encode(data)
