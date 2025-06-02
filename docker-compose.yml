@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: rasp
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./dump.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./rasp-r.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     container_name: db

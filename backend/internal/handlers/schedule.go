@@ -33,8 +33,9 @@ func GetOverallLoadHandler(w http.ResponseWriter, r *http.Request) {
 // @Description Возвращает количество пар группы
 // @Tags Статистика
 // @Produce json
+// @Param groupID path int true "ID группы"
 // @Success 200 {object} models.GroupLoad
-// @Router /group-load/{group.id} [get]
+// @Router /group-load/{groupID} [get]
 func GetGroupLoadHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "groupID")
 	id, err := strconv.Atoi(idStr)
@@ -52,7 +53,14 @@ func GetGroupLoadHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(load)
 }
 
-
+// GetTeacherLoadHandler godoc
+// @Summary Получение загруженности преподавателя
+// @Description Возвращает общее количество пар за семестр у преподавателя
+// @Tags Статистика
+// @Produce json
+// @Success 200 {object} models.TeacherLoad
+// @Param teacherID path int true "ID Преподавателя"
+// @Router /teacher-load/{teacherID} [get]
 func GetTeacherLoadHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "teacherID")
 	id, err := strconv.Atoi(idStr)
@@ -69,54 +77,156 @@ func GetTeacherLoadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(load)
 }
-func GetGroupScheduleHandler(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(chi.URLParam(r, "groupID"))
-	data, _ := db.GetGroupSchedule(r.Context(), id)
-	json.NewEncoder(w).Encode(data)
-}
+
+// GetTeacherScheduleHandler godoc
+// @Summary Получение расписания преподавателя
+// @Tags Расписание
+// @Produce json
+// @Success 200 {array} models.Lesson
+// @Param teacherID path int true "ID Преподавателя"
+// @Router /teacher-schedule/{teacherID} [get]
 func GetTeacherScheduleHandler(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(chi.URLParam(r, "teacherID"))
-	data, _ := db.GetTeacherSchedule(r.Context(), id)
-	json.NewEncoder(w).Encode(data)
+	idStr := chi.URLParam(r, "teacherID")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid teacher ID", http.StatusBadRequest)
+		return
+	}
+	ctx := r.Context()
+	load, err := db.GetTeacherSchedule(ctx, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(load)
 }
+// GetAudienceUtilizationHandler godoc
+// @Summary Получение загруженности выбранной аудитории
+// @Description Возвращает общее количество пар за семестр в выбранной аудитории
+// @Tags Статистика
+// @Produce json
+// @Success 200 {object} models.AudienceUtilization
+// @Param audienceID path int true "ID аудитории"
+// @Router /audience-utilization/{audienceID} [get]
 func GetAudienceUtilizationHandler(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(chi.URLParam(r, "audienceID"))
-	data, _ := db.GetAudienceUtilization(r.Context(), id)
-	json.NewEncoder(w).Encode(data)
+	idStr := chi.URLParam(r, "audienceID")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid audience ID", http.StatusBadRequest)
+		return
+	}
+	ctx := r.Context()
+	load, err := db.GetAudienceUtilization(ctx, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(load)
 }
+// GetDailyLoadHandler godoc
+// @Summary Получение загруженности в выбранную дату
+// @Description Возвращает общее количество пар по выбранной дате 
+// @Tags Статистика
+// @Produce json
+// @Success 200 {object} models.DailyLoad
+// @Param date path string true "Дата (в формате YYYY-MM-DD)"
+// @Router /daily-load/{date} [get]
 func GetDailyLoadHandler(w http.ResponseWriter, r *http.Request) {
 	date := chi.URLParam(r, "date")
-	data, _ := db.GetDailyLoad(r.Context(), date)
-	json.NewEncoder(w).Encode(data)
+	ctx := r.Context()
+	load, err := db.GetDailyLoad(ctx, date)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(load)
 }
+// GetWeeklyLoadHandler godoc
+// @Summary Получение недельной загруженности 
+// @Description Возвращает общее количество пар от выбранного дня до начала след. недели
+// @Tags Статистика
+// @Produce json
+// @Success 200 {array} models.DailyLoad
+// @Param startDate path string true "Дата первого дня(в формате YYYY-MM-DD)"
+// @Router /weekly-load/{startDate} [get]
 func GetWeeklyLoadHandler(w http.ResponseWriter, r *http.Request) {
-	start := r.URL.Query().Get("start")
-	data, _ := db.GetWeeklyLoad(r.Context(), start)
-	json.NewEncoder(w).Encode(data)
+	startDate := chi.URLParam(r, "startDate")
+	ctx := r.Context()
+	if startDate == "" {
+		http.Error(w, "start parameter is required", http.StatusBadRequest)
+		return
+	}
+	weeklyLoad, err := db.GetWeeklyLoad(ctx, startDate)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(weeklyLoad)
 }
-func GetTeacherAvailabilityHandler(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(chi.URLParam(r, "teacherID"))
-	date := r.URL.Query().Get("date")
-	data, _ := db.GetTeacherAvailability(r.Context(), id, date)
-	json.NewEncoder(w).Encode(data)
-}
+
 // GetGroupsHandler godoc
 // @Summary Получить список групп
-// @Tags groups
+// @Tags Группы
 // @Produce json
 // @Success 200 {array} models.Group
 // @Router /groups [get]
 func GetGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	data, _ := db.GetGroups(r.Context())
-	json.NewEncoder(w).Encode(data)
+	groups, err := db.GetGroups(r.Context())
+	if err != nil {
+		http.Error(w, "Ошибка получения групп", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	res, err := json.MarshalIndent(groups, "", "  ")
+	if err != nil {
+		http.Error(w, "Ошибка форматирования JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Write(res)
 }
-
+// GetTeachersHandler godoc
+// @Summary Получить список преподавателей
+// @Tags Преподаватели
+// @Produce json
+// @Success 200 {array} models.Teacher
+// @Router /teachers [get]
 func GetTeachersHandler(w http.ResponseWriter, r *http.Request) {
-	data, _ := db.GetTeachers(r.Context())
-	json.NewEncoder(w).Encode(data)
-}
+	teachers, err := db.GetTeachers(r.Context())
+	if err != nil {
+		http.Error(w, "Ошибка получения преподавателей", http.StatusInternalServerError)
+		return
+	}
 
+	w.Header().Set("Content-Type", "application/json")
+	res, err := json.MarshalIndent(teachers, "", "  ")
+	if err != nil {
+		http.Error(w, "Ошибка форматирования JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Write(res)
+}
+// GetAudienceHandler godoc
+// @Summary Получить список аудиторий
+// @Tags Аудитории
+// @Produce json
+// @Success 200 {array} models.Audience
+// @Router /audiences [get]
 func GetAudiencesHandler(w http.ResponseWriter, r *http.Request) {
-	data, _ := db.GetAudiences(r.Context())
-	json.NewEncoder(w).Encode(data)
+	audiences, err := db.GetAudiences(r.Context())
+	if err != nil {
+		http.Error(w, "Ошибка получения преподавателей", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	res, err := json.MarshalIndent(audiences, "", "  ")
+	if err != nil {
+		http.Error(w, "Ошибка форматирования JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Write(res)
 }

@@ -19,19 +19,16 @@ type Lesson struct {
 	Subject    string `json:"subject"`
 	Teacher    string `json:"teacher"`
 	Group      string `json:"group"`
-	AudienceID int    `json:"audience_id"`
+	Audience   string    `json:"audience"`
 }
 type AudienceUtilization struct {
-	AudienceID int `json:"audience_id"`
-	LoadCount  int `json:"load_count"`
+	AudienceID int    `json:"audience_id"`
+	Room       string `json:"room"`
+	LoadCount  int    `json:"load_count"`
 }
 type DailyLoad struct {
 	Date       string `json:"date"`
 	TotalPairs int    `json:"total_pairs"`
-}
-type TimeSlot struct {
-	StartTime string `json:"start_time"`
-	EndTime   string `json:"end_time"`
 }
 type Group struct {
 	ID int `json:"group_id"`

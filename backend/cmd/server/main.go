@@ -1,6 +1,6 @@
-// @title Schedule Dashboard API
+// @title Dashboard Schedule API
 // @version 1.0
-// @description Это API для аналитического дашборда расписания.
+// @description API для анализатора дашборд расписания.
 // @host localhost:8080
 // @BasePath /
 
@@ -13,7 +13,6 @@ import (
 
     "github.com/go-chi/chi/v5/middleware"
     "github.com/go-chi/chi/v5"
-    //"github.com/rs/cors"
     "log"
     "net/http"
     "os"
@@ -28,29 +27,28 @@ func main() {
     r := chi.NewRouter()
     r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-    // handler := cors.New(cors.Options {
-    // AllowedOrigins:   []string{"*"},
-    // AllowCredentials: true,
-    // AllowedHeaders:   []string{"*"},
-    // AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-    // }).Handler(r)
+  
 
-   
     r.Get("/swagger/*", httpSwagger.WrapHandler)
 
-    // @Tags Статистика
+   
     r.Get("/overall-load", handlers.GetOverallLoadHandler) // +
 
-    // @Tags Статистика
+ 
 	r.Get("/group-load/{groupID}", handlers.GetGroupLoadHandler) // + 
 
-	r.Get("/teacher-load/{teacherID}", handlers.GetTeacherLoadHandler) // +
-	r.Get("/group-schedule/{groupID}", handlers.GetGroupScheduleHandler) // -
-	r.Get("/teacher-schedule/{teacherID}", handlers.GetTeacherScheduleHandler) // +
-	r.Get("/audience-utilization/{audienceID}", handlers.GetAudienceUtilizationHandler) // -
-	r.Get("/daily-load/{date}", handlers.GetDailyLoadHandler) // -
-	r.Get("/weekly-load", handlers.GetWeeklyLoadHandler) // -
-    // @Tags groups
+	
+    r.Get("/teacher-load/{teacherID}", handlers.GetTeacherLoadHandler) // +
+
+	
+    r.Get("/teacher-schedule/{teacherID}", handlers.GetTeacherScheduleHandler) 
+    
+
+	r.Get("/audience-utilization/{audienceID}", handlers.GetAudienceUtilizationHandler) // +
+	r.Get("/daily-load/{date}", handlers.GetDailyLoadHandler) // +
+	r.Get("/weekly-load/{startDate}", handlers.GetWeeklyLoadHandler) // +
+
+    
     r.Get("/groups", handlers.GetGroupsHandler) // +
     r.Get("/teachers", handlers.GetTeachersHandler) // +
     r.Get("/audiences", handlers.GetAudiencesHandler) // +
