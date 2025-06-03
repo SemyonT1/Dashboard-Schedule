@@ -49,7 +49,7 @@ func GetTeacherLoad(ctx context.Context, teacherID int) (models.TeacherLoad, err
 func GetGroupSchedule(ctx context.Context, groupID int) ([]models.Lesson, error) {
 	query := `
 	SELECT 
-		d.day AS date,
+		to_char(d.day, 'YYYY-MM-DD') AS date,
 		r.timestart AS time,
 		disc.shorttitle AS subject,
 		p.fio AS teacher,
@@ -97,7 +97,7 @@ func GetGroupSchedule(ctx context.Context, groupID int) ([]models.Lesson, error)
 func GetTeacherSchedule(ctx context.Context, teacherID int) ([]models.Lesson, error) {
 	query := `
 		SELECT 
-		d.day AS date,
+		to_char(d.day, 'YYYY-MM-DD') AS date,
 		r.timestart AS time,
 		disc.shorttitle AS subject,
 		p.fio AS teacher,
@@ -119,7 +119,7 @@ func GetTeacherSchedule(ctx context.Context, teacherID int) ([]models.Lesson, er
 		return nil, err
 	}
 	defer rows.Close()
-
+	
 	var schedule []models.Lesson
 	for rows.Next() {
 		var lesson models.Lesson
@@ -161,11 +161,12 @@ func GetAudienceUtilization(ctx context.Context, audienceID int) (models.Audienc
 func GetDailyLoad(ctx context.Context, date string) (models.DailyLoad, error) {
 	query := `
 	SELECT 
-		$1::date AS date,
+		$1::text AS date,
 		COUNT(r.id) AS total_pairs
 	FROM sc_rasp18 r
 	JOIN sc_rasp18_days d ON r.day_id = d.id
-	WHERE d.day = $1::date;`
+	WHERE d.day = $1::date
+	GROUP BY $1::text;`
 	var load models.DailyLoad
 	row := db.QueryRowContext(ctx, query, date)
 	err := row.Scan(&load.Date, &load.TotalPairs)
@@ -176,7 +177,7 @@ func GetDailyLoad(ctx context.Context, date string) (models.DailyLoad, error) {
 func GetWeeklyLoad(ctx context.Context, startDate string) ([]models.DailyLoad, error) {
 	query := `
 	SELECT 
-		d.day AS date,
+		to_char(d.day, 'YYYY-MM-DD') AS date,
 		COUNT(r.id) AS total_pairs
 	FROM sc_rasp18_days d
 	LEFT JOIN sc_rasp18 r ON d.id = r.day_id
