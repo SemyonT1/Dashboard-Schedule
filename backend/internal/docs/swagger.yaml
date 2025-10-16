@@ -1,0 +1,69 @@
+basePath: /
+definitions:
+  models.Group:
+    properties:
+      group_id:
+        type: integer
+      group_title:
+        type: string
+    type: object
+  models.GroupLoad:
+    properties:
+      group_title:
+        type: string
+      pairs_count:
+        type: integer
+    type: object
+  models.OverallLoad:
+    properties:
+      total_pairs:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Это API для аналитического дашборда расписания.
+  title: Schedule Dashboard API
+  version: "1.0"
+paths:
+  /group-load/{group.id}:
+    get:
+      description: Возвращает количество пар группы
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GroupLoad'
+      summary: Получение загруженности групп
+      tags:
+      - Статистика
+  /groups:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Group'
+            type: array
+      summary: Получить список групп
+      tags:
+      - groups
+  /overall-load:
+    get:
+      description: Возвращает общее количество пар
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OverallLoad'
+      summary: Получение общей загруженности
+      tags:
+      - Статистика
+swagger: "2.0"

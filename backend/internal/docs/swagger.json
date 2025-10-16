@@ -1,0 +1,107 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Это API для аналитического дашборда расписания.",
+        "title": "Schedule Dashboard API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/group-load/{group.id}": {
+            "get": {
+                "description": "Возвращает количество пар группы",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Статистика"
+                ],
+                "summary": "Получение загруженности групп",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.GroupLoad"
+                        }
+                    }
+                }
+            }
+        },
+        "/groups": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "groups"
+                ],
+                "summary": "Получить список групп",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Group"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/overall-load": {
+            "get": {
+                "description": "Возвращает общее количество пар",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Статистика"
+                ],
+                "summary": "Получение общей загруженности",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.OverallLoad"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.Group": {
+            "type": "object",
+            "properties": {
+                "group_id": {
+                    "type": "integer"
+                },
+                "group_title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GroupLoad": {
+            "type": "object",
+            "properties": {
+                "group_title": {
+                    "type": "string"
+                },
+                "pairs_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.OverallLoad": {
+            "type": "object",
+            "properties": {
+                "total_pairs": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}
