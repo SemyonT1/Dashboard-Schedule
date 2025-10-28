@@ -2,7 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
@@ -38,6 +48,10 @@ export default function Dashboard() {
   const [weekly, setWeekly] = useState<WeeklyLoad[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // новые состояния для гистограмм
+  const [allGroupsLoad, setAllGroupsLoad] = useState<GroupLoad[]>([]);
+  const [allTeachersLoad, setAllTeachersLoad] = useState<TeacherLoad[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -79,6 +93,34 @@ export default function Dashboard() {
       .catch(() => setAudienceLoad(null));
   }, [selectedAudience]);
 
+  // Загрузка нагрузок всех групп
+  useEffect(() => {
+    if (groups.length === 0) return;
+
+    Promise.all(
+      groups.map((g) =>
+        api<GroupLoad>(`/group-load/${g.group_id}`).catch(() => ({
+          group_title: g.group_title,
+          pairs_count: 0,
+        }))
+      )
+    ).then(setAllGroupsLoad);
+  }, [groups]);
+
+  // Загрузка нагрузок всех преподавателей
+  useEffect(() => {
+    if (teachers.length === 0) return;
+
+    Promise.all(
+      teachers.map((t) =>
+        api<TeacherLoad>(`/teacher-load/${t.teacher_id}`).catch(() => ({
+          teacher_name: t.fio,
+          pairs_count: 0,
+        }))
+      )
+    ).then(setAllTeachersLoad);
+  }, [teachers]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-slate-50 to-blue-100 p-10">
       <div className="w-full space-y-10">
@@ -94,10 +136,10 @@ export default function Dashboard() {
 
         {error && <p className="text-red-600 text-center">{error}</p>}
 
-        {/* Карточки в столбик */}
+        {/* Карточки */}
         <div className="flex flex-col items-center gap-6">
           {/* Общая нагрузка */}
-          <Card className="shadow-md bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl w-full max-w-4xl">
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700">Общее количество пар</CardTitle></CardHeader>
             <CardContent>
               {loading ? <Skeleton className="h-8 w-24" /> : <p className="text-4xl font-semibold text-slate-800">{overall?.total_pairs ?? 0}</p>}
@@ -105,7 +147,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Выбор даты */}
-          <Card className="shadow-md bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl w-full max-w-4xl">
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700">Выбор даты</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
               <input
@@ -115,13 +157,13 @@ export default function Dashboard() {
                 className="border border-slate-300 px-3 py-2 rounded-md shadow-sm focus:ring focus:ring-indigo-200"
               />
               <span className="text-slate-700 font-medium">
-                {daily ? `${daily.total_pairs} занятий` : "Нет данных по этой дате"}
+                {daily ? `${daily.total_pairs} занятий в семестре` : "Нет данных по этой дате"}
               </span>
             </CardContent>
           </Card>
 
           {/* Группа */}
-          <Card className="shadow-md bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl w-full max-w-4xl">
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700">Нагрузка по группе</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
               <Select value={selectedGroup ? String(selectedGroup) : ""} onValueChange={(v) => setSelectedGroup(Number(v))}>
@@ -135,13 +177,13 @@ export default function Dashboard() {
                 </SelectContent>
               </Select>
               <span className="text-slate-700 font-medium">
-                {groupLoad ? `${groupLoad.pairs_count} занятий` : "—"}
+                {groupLoad ? `${groupLoad.pairs_count} занятий в семестре` : "—"}
               </span>
             </CardContent>
           </Card>
 
           {/* Преподаватель */}
-          <Card className="shadow-md bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl w-full max-w-4xl">
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700">Нагрузка по преподавателю</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
               <Select value={selectedTeacher ? String(selectedTeacher) : ""} onValueChange={(v) => setSelectedTeacher(Number(v))}>
@@ -155,13 +197,13 @@ export default function Dashboard() {
                 </SelectContent>
               </Select>
               <span className="text-slate-700 font-medium">
-                {teacherLoad ? `${teacherLoad.pairs_count} занятий у ${teacherLoad.teacher_name}` : "—"}
+                {teacherLoad ? `${teacherLoad.pairs_count} занятий в семестре` : "—"}
               </span>
             </CardContent>
           </Card>
 
           {/* Аудитория */}
-          <Card className="shadow-md bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl w-full max-w-4xl">
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700">Загрузка аудитории</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
               <Select value={selectedAudience ? String(selectedAudience) : ""} onValueChange={(v) => setSelectedAudience(Number(v))}>
@@ -175,13 +217,13 @@ export default function Dashboard() {
                 </SelectContent>
               </Select>
               <span className="text-slate-700 font-medium">
-                {audienceLoad ? `${audienceLoad.load_count} занятий` : "—"}
+                {audienceLoad ? `${audienceLoad.load_count} занятий в семестре` : "—"}
               </span>
             </CardContent>
           </Card>
 
-          {/* График */}
-          <Card className="shadow-md bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl w-full max-w-4xl">
+          {/* График по дням */}
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700 text-center">Загрузка по дням (неделя)</CardTitle></CardHeader>
             <CardContent className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -193,6 +235,48 @@ export default function Dashboard() {
                   <Line type="monotone" dataKey="total_pairs" stroke="#6366f1" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Гистограмма групп */}
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-5xl">
+            <CardHeader><CardTitle className="text-indigo-700 text-center">Нагрузка всех групп</CardTitle></CardHeader>
+            <CardContent className="h-[500px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={allGroupsLoad}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
+                  <XAxis
+                    dataKey="group_title"
+                    stroke="#4b5563"
+                    angle={-30}
+                    textAnchor="end"
+                    interval={0}
+                    height={80}
+                  />
+                  <YAxis stroke="#4b5563" />
+                  <Tooltip contentStyle={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }} />
+                  <Bar dataKey="pairs_count" fill="#6366f1" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Гистограмма преподавателей */}
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-5xl">
+            <CardHeader><CardTitle className="text-indigo-700 text-center">Нагрузка всех преподавателей</CardTitle></CardHeader>
+            <CardContent className="h-[500px] relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={allTeachersLoad}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
+                  <XAxis dataKey="teacher_name" stroke="#4b5563" tick={false} />
+                  <YAxis stroke="#4b5563" />
+                  <Tooltip contentStyle={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }} />
+                  <Bar dataKey="pairs_count" fill="#3165e9ff" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="absolute bottom-4 left-0 right-0 text-center text-slate-600 text-sm font-medium">
+                Наведитесь на столбец, чтобы посмотреть подробности
+              </div>
             </CardContent>
           </Card>
         </div>
