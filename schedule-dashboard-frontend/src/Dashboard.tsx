@@ -29,7 +29,7 @@ type Teacher = { teacher_id: number; fio: string };
 type TeacherLoad = { teacher_name: string; pairs_count: number };
 type WeeklyLoad = { date: string; total_pairs: number };
 type Audience = { audience_id: number; room: string };
-type AudienceUtilization = { audience_id: number; load_count: number };
+type AudienceUtilization = { audience_id: number; room: string; load_count: number };
 type DailyLoad = { date: string; total_pairs: number };
 
 export default function Dashboard() {
@@ -44,15 +44,48 @@ export default function Dashboard() {
   const [selectedTeacher, setSelectedTeacher] = useState<number | null>(null);
   const [teacherLoad, setTeacherLoad] = useState<TeacherLoad | null>(null);
   const [selectedAudience, setSelectedAudience] = useState<number | null>(null);
-  const [audienceLoad, setAudienceLoad] = useState<AudienceUtilization | null>(null);
+
+  const [audienceStats, setAudienceStats] = useState<Record<string, number>>({});
+  const [audienceLoading, setAudienceLoading] = useState(true);
+
   const [weekly, setWeekly] = useState<WeeklyLoad[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // новые состояния для гистограмм
   const [allGroupsLoad, setAllGroupsLoad] = useState<GroupLoad[]>([]);
   const [allTeachersLoad, setAllTeachersLoad] = useState<TeacherLoad[]>([]);
 
+
+  // Загрузка всех аудиторий 
+  async function loadAudienceStats() {
+    const start = 283519;
+    const end = 286857;
+
+    const stats: Record<string, number> = {};
+
+    for (let id = start; id <= end; id++) {
+      try {
+        const data = await api<AudienceUtilization>(`/audience-utilization/${id}`);
+
+        if (!data.room) continue;
+
+        const room = data.room;
+
+        if (!stats[room]) stats[room] = 0;
+        stats[room] += 1;
+      } catch (_) {}
+    }
+
+    setAudienceStats(stats);
+    setAudienceLoading(false);
+  }
+
+  useEffect(() => {
+    loadAudienceStats();
+  }, []);
+
+  
+  // Основные загрузки
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -86,17 +119,10 @@ export default function Dashboard() {
     api<TeacherLoad>(`/teacher-load/${selectedTeacher}`).then(setTeacherLoad).catch(() => setTeacherLoad(null));
   }, [selectedTeacher]);
 
-  useEffect(() => {
-    if (selectedAudience == null) return;
-    api<AudienceUtilization>(`/audience-utilization/${selectedAudience}`)
-      .then((data) => setAudienceLoad(data))
-      .catch(() => setAudienceLoad(null));
-  }, [selectedAudience]);
 
-  // Загрузка нагрузок всех групп
+  // Гистограммы групп/преподавателей
   useEffect(() => {
     if (groups.length === 0) return;
-
     Promise.all(
       groups.map((g) =>
         api<GroupLoad>(`/group-load/${g.group_id}`).catch(() => ({
@@ -107,10 +133,8 @@ export default function Dashboard() {
     ).then(setAllGroupsLoad);
   }, [groups]);
 
-  // Загрузка нагрузок всех преподавателей
   useEffect(() => {
     if (teachers.length === 0) return;
-
     Promise.all(
       teachers.map((t) =>
         api<TeacherLoad>(`/teacher-load/${t.teacher_id}`).catch(() => ({
@@ -121,10 +145,19 @@ export default function Dashboard() {
     ).then(setAllTeachersLoad);
   }, [teachers]);
 
+
+  // Получение результата для выбранной аудитории
+  const selectedAudienceRoom = audiences.find((a) => a.audience_id === selectedAudience)?.room ?? "";
+
+  const audienceLoad = selectedAudienceRoom
+    ? audienceStats[selectedAudienceRoom] ?? 0
+    : null;
+
+
+  // Рендер
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-slate-50 to-blue-100 p-10">
       <div className="w-full space-y-10">
-        {/* Заголовок */}
         <header className="text-center mb-10">
           <h1 className="text-4xl font-bold text-indigo-700 drop-shadow-sm">
             Аналитический дашборд расписания
@@ -136,17 +169,17 @@ export default function Dashboard() {
 
         {error && <p className="text-red-600 text-center">{error}</p>}
 
-        {/* Карточки */}
         <div className="flex flex-col items-center gap-6">
+
           {/* Общая нагрузка */}
           <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700">Общее количество пар</CardTitle></CardHeader>
             <CardContent>
-              {loading ? <Skeleton className="h-8 w-24" /> : <p className="text-4xl font-semibold text-slate-800">{overall?.total_pairs ?? 0}</p>}
+              {loading ? <Skeleton className="h-8 w-24" /> : <p className="text-4xl">{overall?.total_pairs}</p>}
             </CardContent>
           </Card>
 
-          {/* Выбор даты */}
+          {/* Дата */}
           <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700">Выбор даты</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
@@ -154,11 +187,9 @@ export default function Dashboard() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="border border-slate-300 px-3 py-2 rounded-md shadow-sm focus:ring focus:ring-indigo-200"
+                className="border border-slate-300 px-3 py-2 rounded-md"
               />
-              <span className="text-slate-700 font-medium">
-                {daily ? `${daily.total_pairs} занятий в семестре` : "Нет данных по этой дате"}
-              </span>
+              <span>{daily ? `${daily.total_pairs} занятий` : "Нет данных"}</span>
             </CardContent>
           </Card>
 
@@ -167,7 +198,7 @@ export default function Dashboard() {
             <CardHeader><CardTitle className="text-indigo-700">Нагрузка по группе</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
               <Select value={selectedGroup ? String(selectedGroup) : ""} onValueChange={(v) => setSelectedGroup(Number(v))}>
-                <SelectTrigger className="w-64 border-slate-300 bg-white/70">
+                <SelectTrigger className="w-64">
                   <SelectValue placeholder="Выбрать группу" />
                 </SelectTrigger>
                 <SelectContent>
@@ -176,9 +207,7 @@ export default function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-slate-700 font-medium">
-                {groupLoad ? `${groupLoad.pairs_count} занятий в семестре` : "—"}
-              </span>
+              <span>{groupLoad ? `${groupLoad.pairs_count} занятий` : "—"}</span>
             </CardContent>
           </Card>
 
@@ -187,7 +216,7 @@ export default function Dashboard() {
             <CardHeader><CardTitle className="text-indigo-700">Нагрузка по преподавателю</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
               <Select value={selectedTeacher ? String(selectedTeacher) : ""} onValueChange={(v) => setSelectedTeacher(Number(v))}>
-                <SelectTrigger className="w-64 border-slate-300 bg-white/70">
+                <SelectTrigger className="w-64">
                   <SelectValue placeholder="Выбрать преподавателя" />
                 </SelectTrigger>
                 <SelectContent>
@@ -196,9 +225,7 @@ export default function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-slate-700 font-medium">
-                {teacherLoad ? `${teacherLoad.pairs_count} занятий в семестре` : "—"}
-              </span>
+              <span>{teacherLoad ? `${teacherLoad.pairs_count} занятий` : "—"}</span>
             </CardContent>
           </Card>
 
@@ -207,7 +234,7 @@ export default function Dashboard() {
             <CardHeader><CardTitle className="text-indigo-700">Загрузка аудитории</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
               <Select value={selectedAudience ? String(selectedAudience) : ""} onValueChange={(v) => setSelectedAudience(Number(v))}>
-                <SelectTrigger className="w-64 border-slate-300 bg-white/70">
+                <SelectTrigger className="w-64">
                   <SelectValue placeholder="Выбрать аудиторию" />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,67 +243,94 @@ export default function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-slate-700 font-medium">
-                {audienceLoad ? `${audienceLoad.load_count} занятий в семестре` : "—"}
-              </span>
+
+              {audienceLoading ? (
+                <span>Идет анализ данных…</span>
+              ) : (
+                <span>
+                  {audienceLoad !== null ? `${audienceLoad} занятий` : "—"}
+                </span>
+              )}
             </CardContent>
           </Card>
 
-          {/* График по дням */}
+          {/* График недели */}
           <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-4xl">
             <CardHeader><CardTitle className="text-indigo-700 text-center">Загрузка по дням (неделя)</CardTitle></CardHeader>
             <CardContent className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={weekly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
-                  <XAxis dataKey="date" stroke="#4b5563" />
-                  <YAxis stroke="#4b5563" />
-                  <Tooltip contentStyle={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }} />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
                   <Line type="monotone" dataKey="total_pairs" stroke="#6366f1" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Гистограмма групп */}
+          {/* Группы */}
           <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-5xl">
             <CardHeader><CardTitle className="text-indigo-700 text-center">Нагрузка всех групп</CardTitle></CardHeader>
             <CardContent className="h-[500px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={allGroupsLoad}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
-                  <XAxis
-                    dataKey="group_title"
-                    stroke="#4b5563"
-                    angle={-30}
-                    textAnchor="end"
-                    interval={0}
-                    height={80}
-                  />
-                  <YAxis stroke="#4b5563" />
-                  <Tooltip contentStyle={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }} />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="group_title" angle={-30} textAnchor="end" interval={0} height={80} />
+                  <YAxis />
+                  <Tooltip />
                   <Bar dataKey="pairs_count" fill="#6366f1" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Гистограмма преподавателей */}
+          {/* Преподаватели */}
           <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-5xl">
             <CardHeader><CardTitle className="text-indigo-700 text-center">Нагрузка всех преподавателей</CardTitle></CardHeader>
             <CardContent className="h-[500px] relative">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={allTeachersLoad}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
-                  <XAxis dataKey="teacher_name" stroke="#4b5563" tick={false} />
-                  <YAxis stroke="#4b5563" />
-                  <Tooltip contentStyle={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }} />
-                  <Bar dataKey="pairs_count" fill="#3165e9ff" />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="teacher_name" tick={false} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="pairs_count" fill="#3165e9" />
                 </BarChart>
               </ResponsiveContainer>
-              <div className="absolute bottom-4 left-0 right-0 text-center text-slate-600 text-sm font-medium">
+              <div className="absolute bottom-4 left-0 right-0 text-center text-slate-600">
                 Наведитесь на столбец, чтобы посмотреть подробности
               </div>
+            </CardContent>
+          </Card>
+          {/* Гистограмма аудиторий */}
+          <Card className="shadow-md bg-white/80 border border-slate-200 rounded-2xl w-full max-w-5xl">
+            <CardHeader><CardTitle className="text-indigo-700 text-center">Нагрузка всех аудиторий</CardTitle></CardHeader>
+            <CardContent className="h-[500px] relative">
+              {audienceLoading ? (
+                <div className="flex items-center justify-center h-full text-slate-600 text-lg">Идёт анализ данных аудиторий…</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={Object.keys(audienceStats).map((room) => ({
+                      room: room,
+                      load: audienceStats[room],
+                    }))}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
+                    <XAxis dataKey="room" tick={false} />
+                    <YAxis stroke="#4b5563" />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }}
+                      formatter={(val) => [`${val} занятий`, "Загрузка"]}
+                    />
+                    <Bar dataKey="load" fill="#8b5cf6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+
+              <div className="absolute bottom-4 left-0 right-0 text-center text-slate-600 text-sm font-medium">Наведитесь на столбец, чтобы посмотреть подробности</div>
             </CardContent>
           </Card>
         </div>
